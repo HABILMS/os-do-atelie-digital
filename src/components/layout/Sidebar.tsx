@@ -1,125 +1,157 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useMobile } from "@/hooks/use-mobile"; 
 import { 
-  User, 
-  Home, 
+  LayoutDashboard, 
+  ShoppingBag, 
+  Users, 
   Package, 
-  ShoppingBag,
-  Settings,
-  Menu,
-  X
+  LogOut,
+  Settings 
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-type NavItemProps = {
-  to: string;
-  icon: React.ElementType;
-  label: string;
-  isCollapsed: boolean;
-  isActive: boolean;
-};
-
-const NavItem = ({ to, icon: Icon, label, isCollapsed, isActive }: NavItemProps) => {
-  return (
-    <Link to={to}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-4 py-2 px-3 h-auto",
-          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-        )}
-      >
-        <Icon size={20} />
-        {!isCollapsed && <span>{label}</span>}
-      </Button>
-    </Link>
-  );
-};
-
-export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const Sidebar = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useMobile();
   const location = useLocation();
+  const { toast } = useToast();
   
-  const isActive = (path: string) => location.pathname === path;
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
   
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem("authenticated");
+      toast({
+        title: "Logout realizado",
+        description: "Você saiu da sua conta com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Não foi possível sair da sua conta.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const navItems = [
+    {
+      name: "Dashboard",
+      icon: <LayoutDashboard size={20} />,
+      path: "/",
+      active: location.pathname === "/"
+    },
+    {
+      name: "Clientes",
+      icon: <Users size={20} />,
+      path: "/clientes",
+      active: location.pathname === "/clientes"
+    },
+    {
+      name: "Produtos",
+      icon: <Package size={20} />,
+      path: "/produtos",
+      active: location.pathname === "/produtos"
+    },
+    {
+      name: "Pedidos",
+      icon: <ShoppingBag size={20} />,
+      path: "/pedidos",
+      active: location.pathname === "/pedidos"
+    },
+    {
+      name: "Configurações",
+      icon: <Settings size={20} />,
+      path: "/configuracoes",
+      active: location.pathname === "/configuracoes"
+    }
+  ];
+
+  if (isMobile || !isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div
-      className={cn(
-        "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 sticky top-0 left-0",
-        isCollapsed ? "w-[80px]" : "w-[250px]"
-      )}
+    <aside 
+      className={`bg-white border-r border-border transition-all duration-300 ${
+        collapsed ? "w-[70px]" : "w-[240px]"
+      }`}
     >
-      <div className="flex items-center h-16 px-4">
-        {!isCollapsed ? (
-          <div className="flex items-center gap-2 font-display font-bold text-lg text-lacos-primary">
-            <div className="w-8 h-8 rounded-full bg-lacos-primary flex items-center justify-center text-white">
-              ML
-            </div>
-            <span>Meu Ateliê</span>
-          </div>
-        ) : (
-          <div className="w-8 h-8 mx-auto rounded-full bg-lacos-primary flex items-center justify-center text-white font-bold">
-            ML
-          </div>
-        )}
-      </div>
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="flex items-center justify-center h-16 px-4 border-b">
+          <Link to="/" className="font-bold text-xl text-lacos-primary">
+            {collapsed ? "ML" : "Meu Laços"}
+          </Link>
+        </div>
 
-      <Separator className="bg-sidebar-border" />
-      
-      <div className="flex-1 py-4 px-2 flex flex-col gap-1">
-        <NavItem 
-          to="/" 
-          icon={Home} 
-          label="Dashboard" 
-          isCollapsed={isCollapsed} 
-          isActive={isActive("/")} 
-        />
-        <NavItem 
-          to="/clientes" 
-          icon={User} 
-          label="Clientes" 
-          isCollapsed={isCollapsed} 
-          isActive={isActive("/clientes")} 
-        />
-        <NavItem 
-          to="/produtos" 
-          icon={Package} 
-          label="Produtos" 
-          isCollapsed={isCollapsed} 
-          isActive={isActive("/produtos")} 
-        />
-        <NavItem 
-          to="/pedidos" 
-          icon={ShoppingBag} 
-          label="Pedidos" 
-          isCollapsed={isCollapsed} 
-          isActive={isActive("/pedidos")} 
-        />
-      </div>
+        {/* Navegação */}
+        <nav className="flex-1 p-2 space-y-1">
+          {navItems.map((item) => (
+            <Link key={item.path} to={item.path}>
+              <Button
+                variant={item.active ? "default" : "ghost"}
+                size="sm"
+                className={`w-full justify-start ${item.active ? "bg-lacos-primary text-white" : ""}`}
+              >
+                {item.icon}
+                {!collapsed && <span className="ml-2">{item.name}</span>}
+              </Button>
+            </Link>
+          ))}
+        </nav>
 
-      <Separator className="bg-sidebar-border" />
-      
-      <div className="py-4 px-2 flex flex-col gap-1">
-        <NavItem 
-          to="/configuracoes" 
-          icon={Settings} 
-          label="Configurações" 
-          isCollapsed={isCollapsed} 
-          isActive={isActive("/configuracoes")} 
-        />
+        {/* Ações do Usuário */}
+        <div className="p-2 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-500 hover:text-gray-800"
+            onClick={handleLogout}
+          >
+            <LogOut size={20} />
+            {!collapsed && <span className="ml-2">Sair</span>}
+          </Button>
+
+          <Separator className="my-2" />
+          
+          {/* Botão de colapsar */}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="w-full justify-start mt-1" 
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? ">" : "<"}
+            {!collapsed && <span className="ml-2">Recolher menu</span>}
+          </Button>
+        </div>
       </div>
-      
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="self-end mb-4 mx-2"
-      >
-        {isCollapsed ? <Menu size={20} /> : <X size={20} />}
-      </Button>
-    </div>
+    </aside>
   );
-}
+};
+
+export default Sidebar;

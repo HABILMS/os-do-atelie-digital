@@ -9,7 +9,280 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      configuracoes: {
+        Row: {
+          cor_tema: string | null
+          created_at: string | null
+          id: string
+          instagram: string | null
+          logomarca: string | null
+          nome_loja: string
+          telefone: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cor_tema?: string | null
+          created_at?: string | null
+          id?: string
+          instagram?: string | null
+          logomarca?: string | null
+          nome_loja?: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cor_tema?: string | null
+          created_at?: string | null
+          id?: string
+          instagram?: string | null
+          logomarca?: string | null
+          nome_loja?: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      items_pedido: {
+        Row: {
+          created_at: string
+          id: string
+          pedido_id: string
+          preco_unitario: number
+          produto_id: string
+          quantidade: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pedido_id: string
+          preco_unitario?: number
+          produto_id: string
+          quantidade?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pedido_id?: string
+          preco_unitario?: number
+          produto_id?: string
+          quantidade?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_pedido_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_pedido_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materiais: {
+        Row: {
+          created_at: string
+          custo_total: number
+          custo_unitario: number
+          id: string
+          nome: string
+          produto_id: string
+          quantidade: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custo_total?: number
+          custo_unitario?: number
+          id?: string
+          nome: string
+          produto_id: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custo_total?: number
+          custo_unitario?: number
+          id?: string
+          nome?: string
+          produto_id?: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materiais_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          custo_frete: number
+          data_pedido: string
+          forma_pagamento: string
+          id: string
+          pago: boolean
+          total_pedido: number
+          total_produtos: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          custo_frete?: number
+          data_pedido?: string
+          forma_pagamento: string
+          id?: string
+          pago?: boolean
+          total_pedido?: number
+          total_produtos?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          custo_frete?: number
+          data_pedido?: string
+          forma_pagamento?: string
+          id?: string
+          pago?: boolean
+          total_pedido?: number
+          total_produtos?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          colecao: string | null
+          created_at: string
+          custo_total: number
+          foto_url: string | null
+          id: string
+          margem_lucro: number
+          nome: string
+          preco_final: number
+          preco_sugerido: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          colecao?: string | null
+          created_at?: string
+          custo_total?: number
+          foto_url?: string | null
+          id?: string
+          margem_lucro?: number
+          nome: string
+          preco_final?: number
+          preco_sugerido?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          colecao?: string | null
+          created_at?: string
+          custo_total?: number
+          foto_url?: string | null
+          id?: string
+          margem_lucro?: number
+          nome?: string
+          preco_final?: number
+          preco_sugerido?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

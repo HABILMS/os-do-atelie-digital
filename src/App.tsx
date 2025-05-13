@@ -11,6 +11,7 @@ import Registro from "./pages/Registro";
 import Clientes from "./pages/Clientes";
 import Produtos from "./pages/Produtos";
 import Pedidos from "./pages/Pedidos";
+import Configuracoes from "./pages/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/produtos" element={<Produtos />} />
           <Route path="/pedidos" element={<Pedidos />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +12,14 @@ import {
 } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Plus, 
   Search,
   Package,
-  Image,
+  Image as ImageIcon,
   X,
+  Upload,
   Edit 
 } from "lucide-react";
 
@@ -63,6 +64,7 @@ const Produtos = () => {
     custoUnitario: 0
   });
   const [margemLucro, setMargemLucro] = useState(50);
+  const [uploading, setUploading] = useState(false);
   
   const { toast } = useToast();
 
@@ -73,6 +75,48 @@ const Produtos = () => {
     setMateriais([]);
     setMargemLucro(50);
     setEditando(null);
+  };
+
+  const handleUploadFoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error("Você precisa selecionar uma imagem para fazer upload.");
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split(".").pop();
+      const fileName = `produto-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      setUploading(true);
+
+      const { error: uploadError } = await supabase.storage
+        .from("laceira-imagens")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from("laceira-imagens")
+        .getPublicUrl(filePath);
+
+      setFoto(data.publicUrl);
+      
+      toast({
+        title: "Imagem enviada com sucesso",
+        description: "A foto do produto foi atualizada.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao fazer upload da imagem",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleNovoMaterial = () => {
@@ -312,7 +356,7 @@ const Produtos = () => {
 
             <div className="space-y-2">
               <Label>Foto do Produto</Label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="w-32 h-32 bg-gray-100 border border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
                   {foto ? (
                     <img
@@ -321,17 +365,37 @@ const Produtos = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Image size={32} className="text-gray-400" />
+                    <ImageIcon size={32} className="text-gray-400" />
                   )}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline"
+                      type="button"
+                      onClick={() => document.getElementById('foto-upload')?.click()}
+                      disabled={uploading}
+                      className="w-full sm:w-auto"
+                    >
+                      <Upload size={16} className="mr-2" />
+                      {uploading ? "Enviando..." : "Escolher imagem"}
+                    </Button>
+                    <Input
+                      id="foto-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadFoto}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </div>
                   <Input
-                    placeholder="URL da imagem"
+                    placeholder="ou insira a URL da imagem"
                     value={foto}
                     onChange={(e) => setFoto(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Insira a URL de uma imagem ou deixe em branco para usar uma imagem padrão
+                    Tamanho recomendado: 500x500 pixels. Formatos: JPG, PNG
                   </p>
                 </div>
               </div>

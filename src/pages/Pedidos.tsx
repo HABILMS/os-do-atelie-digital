@@ -1,5 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useReactToPrint } from 'react-to-print';
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,9 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingBag, Plus, Search, FileText, DollarSign } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import StoreInfo from "@/components/layout/StoreInfo";
+import PedidoPDF from "@/components/pedidos/PedidoPDF";
 
 type Cliente = {
   id: string;
@@ -71,6 +74,15 @@ type Pedido = {
   formaPagamento: "dinheiro" | "cartao" | "pix" | "consignado";
   status: "recebido" | "pendente";
   dataCriacao: string;
+};
+
+type StoreInfo = {
+  nome_loja: string;
+  logomarca: string | null;
+  instagram: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  cor_tema: string;
 };
 
 // Dados fictícios para demonstração
@@ -127,6 +139,9 @@ const Pedidos = () => {
   
   const [pedidoDetalhes, setPedidoDetalhes] = useState<Pedido | null>(null);
   const [showDetalhes, setShowDetalhes] = useState(false);
+  
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
 
@@ -251,12 +266,49 @@ const Pedidos = () => {
     });
   };
 
-  const handleGerarPDF = () => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A geração de PDF será implementada em breve.",
-    });
-  };
+  const handleGerarPDF = useReactToPrint({
+    content: () => pdfRef.current,
+    documentTitle: `Pedido-${pedidoDetalhes?.id.split('-')[1] || ''}`,
+    onAfterPrint: () => {
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O seu pedido foi exportado para PDF."
+      });
+    },
+    onPrintError: () => {
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o PDF do pedido.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  useEffect(() => {
+    const fetchStoreInfo = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) return;
+        
+        const { data, error } = await supabase
+          .from("configuracoes")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Erro ao carregar informações da loja:", error);
+        }
+
+        setStoreInfo(data);
+      } catch (error) {
+        console.error("Erro ao carregar informações da loja:", error);
+      }
+    };
+
+    fetchStoreInfo();
+  }, []);
 
   const pedidosFiltrados = pedidos.filter(pedido => 
     pedido.cliente.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -264,7 +316,7 @@ const Pedidos = () => {
   );
 
   return (
-    <Layout title="Pedidos">
+    <Layout title="Pedidos" showStoreInfo={true}>
       {!showDetalhes ? (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -685,6 +737,11 @@ const Pedidos = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+              
+              {/* Versão PDF para impressão (invisível) */}
+              <div className="hidden">
+                <PedidoPDF ref={pdfRef} pedido={pedidoDetalhes} storeInfo={storeInfo} />
               </div>
             </div>
           )}
