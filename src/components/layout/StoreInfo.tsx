@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram } from "lucide-react";
+import { Instagram, Package } from "lucide-react";
 
 type StoreInfo = {
   nome_loja: string;
@@ -10,6 +10,7 @@ type StoreInfo = {
   telefone: string | null;
   whatsapp: string | null;
   cor_tema: string;
+  email: string | null;
 };
 
 interface StoreInfoProps {
@@ -69,19 +70,25 @@ export default function StoreInfo({ minimal = false }: StoreInfoProps) {
   if (minimal) {
     return (
       <div className="flex items-center gap-2">
-        {storeInfo.logomarca && (
+        {storeInfo.logomarca ? (
           <img 
             src={storeInfo.logomarca} 
             alt={storeInfo.nome_loja}
             className="h-8 w-auto object-contain"
           />
+        ) : (
+          <Package size={20} className="text-gray-400" />
         )}
+        <span className="font-semibold" style={{ color: storeInfo.cor_tema }}>
+          {storeInfo.nome_loja}
+        </span>
         {storeInfo.instagram && (
           <a 
             href={`https://instagram.com/${storeInfo.instagram.replace('@', '')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-sm hover:underline"
+            style={{ color: storeInfo.cor_tema }}
           >
             <Instagram size={14} />
             {storeInfo.instagram}
@@ -103,7 +110,7 @@ export default function StoreInfo({ minimal = false }: StoreInfoProps) {
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
-            <span className="text-2xl font-bold text-gray-400">Logo</span>
+            <Package size={32} className="text-gray-400" />
           </div>
         )}
       </div>
@@ -136,6 +143,12 @@ export default function StoreInfo({ minimal = false }: StoreInfoProps) {
           {storeInfo.whatsapp && (
             <p className="text-sm text-muted-foreground">
               WhatsApp: {storeInfo.whatsapp}
+            </p>
+          )}
+          
+          {storeInfo.email && (
+            <p className="text-sm text-muted-foreground">
+              Email: {storeInfo.email}
             </p>
           )}
         </div>

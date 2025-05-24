@@ -46,6 +46,7 @@ export type Database = {
         Row: {
           cor_tema: string | null
           created_at: string | null
+          email: string | null
           id: string
           instagram: string | null
           logomarca: string | null
@@ -58,6 +59,7 @@ export type Database = {
         Insert: {
           cor_tema?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
           instagram?: string | null
           logomarca?: string | null
@@ -70,6 +72,7 @@ export type Database = {
         Update: {
           cor_tema?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
           instagram?: string | null
           logomarca?: string | null

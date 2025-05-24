@@ -24,12 +24,19 @@ type StoreInfo = {
   telefone: string | null;
   whatsapp: string | null;
   cor_tema: string;
+  email: string | null;
 };
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
+  const [stats, setStats] = useState({
+    pedidos: 0,
+    clientes: 0,
+    produtos: 0,
+    faturamento: 0
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,7 +53,10 @@ const Index = () => {
       }
 
       setIsAuthenticated(true);
-      await fetchStoreInfo(session.user.id);
+      await Promise.all([
+        fetchStoreInfo(session.user.id),
+        fetchStats(session.user.id)
+      ]);
     } catch (error) {
       console.error("Erro na autenticação:", error);
       navigate('/login');
@@ -73,6 +83,27 @@ const Index = () => {
     }
   };
 
+  const fetchStats = async (userId: string) => {
+    try {
+      const [pedidosResult, clientesResult, produtosResult] = await Promise.all([
+        supabase.from("pedidos").select("total_pedido").eq("user_id", userId),
+        supabase.from("clientes").select("id").eq("user_id", userId),
+        supabase.from("produtos").select("id").eq("user_id", userId)
+      ]);
+
+      const totalFaturamento = pedidosResult.data?.reduce((sum, pedido) => sum + pedido.total_pedido, 0) || 0;
+
+      setStats({
+        pedidos: pedidosResult.data?.length || 0,
+        clientes: clientesResult.data?.length || 0,
+        produtos: produtosResult.data?.length || 0,
+        faturamento: totalFaturamento
+      });
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas:", error);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -91,7 +122,7 @@ const Index = () => {
   }
 
   return (
-    <Layout title="Dashboard">
+    <Layout title="DASHBOARDV1">
       <div className="space-y-6">
         {/* Cabeçalho com informações da loja */}
         <div className="bg-white rounded-xl border border-lacos-rose p-6">
@@ -115,18 +146,32 @@ const Index = () => {
                 {storeInfo?.nome_loja || 'Meu Ateliê de Laços'}
               </h1>
               
-              {storeInfo?.instagram && (
-                <a 
-                  href={`https://instagram.com/${storeInfo.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm hover:underline mt-1"
-                  style={{ color: storeInfo.cor_tema || '#F87171' }}
-                >
-                  <Instagram size={16} />
-                  {storeInfo.instagram}
-                </a>
-              )}
+              <div className="mt-2 space-y-1">
+                {storeInfo?.instagram && (
+                  <a 
+                    href={`https://instagram.com/${storeInfo.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm hover:underline"
+                    style={{ color: storeInfo.cor_tema || '#F87171' }}
+                  >
+                    <Instagram size={16} />
+                    {storeInfo.instagram}
+                  </a>
+                )}
+                
+                {storeInfo?.telefone && (
+                  <p className="text-sm text-muted-foreground">
+                    Tel: {storeInfo.telefone}
+                  </p>
+                )}
+                
+                {storeInfo?.email && (
+                  <p className="text-sm text-muted-foreground">
+                    Email: {storeInfo.email}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -145,25 +190,25 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
             title="Pedidos do Mês"
-            value="0"
-            description="Nenhum pedido ainda"
+            value={stats.pedidos}
+            description={stats.pedidos === 0 ? "Nenhum pedido ainda" : `${stats.pedidos} pedidos`}
             icon={<ShoppingBag className="h-4 w-4" />}
           />
           <StatsCard
             title="Clientes"
-            value="0"
-            description="Cadastre seu primeiro cliente"
+            value={stats.clientes}
+            description={stats.clientes === 0 ? "Cadastre seu primeiro cliente" : `${stats.clientes} clientes`}
             icon={<Users className="h-4 w-4" />}
           />
           <StatsCard
             title="Produtos"
-            value="0"
-            description="Adicione seus produtos"
+            value={stats.produtos}
+            description={stats.produtos === 0 ? "Adicione seus produtos" : `${stats.produtos} produtos`}
             icon={<Package className="h-4 w-4" />}
           />
           <StatsCard
             title="Faturamento"
-            value="R$ 0,00"
+            value={`R$ ${stats.faturamento.toFixed(2)}`}
             description="Este mês"
             icon={<DollarSign className="h-4 w-4" />}
           />
@@ -255,10 +300,10 @@ const Index = () => {
             <div className="text-center py-8">
               <ShoppingBag size={48} className="mx-auto text-gray-400 mb-4" />
               <p className="text-muted-foreground mb-4">
-                Nenhum pedido cadastrado ainda
+                {stats.pedidos === 0 ? "Nenhum pedido cadastrado ainda" : `Você tem ${stats.pedidos} pedidos`}
               </p>
               <Button onClick={() => navigate('/pedidos')}>
-                Criar Primeiro Pedido
+                {stats.pedidos === 0 ? "Criar Primeiro Pedido" : "Ver Todos os Pedidos"}
               </Button>
             </div>
           </CardContent>
