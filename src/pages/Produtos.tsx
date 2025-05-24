@@ -61,7 +61,7 @@ const Produtos = () => {
     id: "",
     nome: "",
     quantidade: 1,
-    custoUnitario: 0
+    custoUnitario: ""
   });
   const [margemLucro, setMargemLucro] = useState(50);
   const [uploading, setUploading] = useState(false);
@@ -120,7 +120,7 @@ const Produtos = () => {
   };
 
   const handleNovoMaterial = () => {
-    if (!novoMaterial.nome || novoMaterial.custoUnitario <= 0) {
+    if (!novoMaterial.nome || !novoMaterial.custoUnitario || Number(novoMaterial.custoUnitario) <= 0) {
       toast({
         title: "Erro ao adicionar material",
         description: "Nome e custo unitário são obrigatórios.",
@@ -133,7 +133,8 @@ const Produtos = () => {
       ...materiais,
       { 
         ...novoMaterial,
-        id: `material-${Date.now()}`
+        id: `material-${Date.now()}`,
+        custoUnitario: Number(novoMaterial.custoUnitario)
       }
     ]);
     
@@ -141,7 +142,7 @@ const Produtos = () => {
       id: "",
       nome: "",
       quantidade: 1,
-      custoUnitario: 0
+      custoUnitario: ""
     });
   };
 
@@ -464,9 +465,9 @@ const Produtos = () => {
                         type="number"
                         min={0}
                         step={0.01}
-                        placeholder="0,00"
+                        placeholder="Digite o valor"
                         value={novoMaterial.custoUnitario}
-                        onChange={(e) => setNovoMaterial({ ...novoMaterial, custoUnitario: Number(e.target.value) })}
+                        onChange={(e) => setNovoMaterial({ ...novoMaterial, custoUnitario: e.target.value })}
                       />
                     </div>
                   </div>

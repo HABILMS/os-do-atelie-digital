@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,24 +15,52 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Verificar se já está logado
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    checkSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha email e senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Simulação de login - quando integrarmos com Supabase isto será substituído
-      setTimeout(() => {
-        localStorage.setItem("authenticated", "true");
-        toast({
-          title: "Login efetuado com sucesso!",
-          description: "Bem-vindo ao Meu Ateliê de Laços.",
-        });
-        navigate("/");
-      }, 1000);
-    } catch (error) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Login efetuado com sucesso!",
+        description: "Bem-vindo ao Meu Ateliê de Laços.",
+      });
+      
+      navigate("/");
+    } catch (error: any) {
+      console.error("Erro no login:", error);
       toast({
         title: "Erro ao fazer login",
-        description: "Verifique suas credenciais e tente novamente.",
+        description: error.message || "Verifique suas credenciais e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -73,8 +102,8 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <Link to="/esqueci-senha" className="text-xs text-lacos-primary hover:underline">
-                    Esqueceu a senha?
+                  <Link to="/registro" className="text-xs text-lacos-primary hover:underline">
+                    Não tem conta? Cadastre-se
                   </Link>
                 </div>
                 <Input
@@ -93,7 +122,7 @@ const Login = () => {
               </Button>
               <p className="text-sm text-center text-gray-500">
                 Ainda não possui uma conta?{" "}
-                <Link to="/cadastro" className="text-lacos-primary hover:underline">
+                <Link to="/registro" className="text-lacos-primary hover:underline">
                   Cadastre-se
                 </Link>
               </p>
