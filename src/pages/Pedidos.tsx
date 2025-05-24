@@ -41,7 +41,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingBag, Plus, Search, FileText, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import StoreInfo from "@/components/layout/StoreInfo";
 import PedidoPDF from "@/components/pedidos/PedidoPDF";
 
 type Cliente = {
@@ -275,7 +274,8 @@ const Pedidos = () => {
         description: "O seu pedido foi exportado para PDF."
       });
     },
-    onPrintError: () => {
+    onPrintError: (errorLocation, error) => {
+      console.error("Erro ao gerar PDF:", error);
       toast({
         title: "Erro ao gerar PDF",
         description: "Não foi possível gerar o PDF do pedido.",
@@ -606,7 +606,7 @@ const Pedidos = () => {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={handleGerarPDF}
+                    onClick={() => handleGerarPDF()}
                   >
                     <FileText size={18} className="mr-2" />
                     Gerar PDF
@@ -739,83 +739,13 @@ const Pedidos = () => {
                 </div>
               </div>
               
-              {/* Versão PDF para impressão (invisível) */}
-              <div className="hidden">
-                <div ref={pdfRef} className="p-8 bg-white">
-                  <div className="space-y-6">
-                    <div className="text-center border-b pb-4">
-                      <h1 className="text-2xl font-bold">Pedido #{pedidoDetalhes.id.split('-')[1]}</h1>
-                      <p className="text-gray-600">{new Date(pedidoDetalhes.dataCriacao).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="font-semibold mb-2">Cliente:</h3>
-                        <p>{pedidoDetalhes.cliente.nome}</p>
-                        <p>{pedidoDetalhes.cliente.telefone}</p>
-                        <p>{pedidoDetalhes.cliente.email}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold mb-2">Pagamento:</h3>
-                        <p>
-                          {pedidoDetalhes.formaPagamento === "dinheiro" && "Dinheiro"}
-                          {pedidoDetalhes.formaPagamento === "cartao" && "Cartão"}
-                          {pedidoDetalhes.formaPagamento === "pix" && "Pix"}
-                          {pedidoDetalhes.formaPagamento === "consignado" && "Consignado"}
-                        </p>
-                        <p className="font-semibold">
-                          Status: {pedidoDetalhes.status === "recebido" ? "Pago" : "Pendente"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold mb-4">Itens do Pedido:</h3>
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 p-2 text-left">Produto</th>
-                            <th className="border border-gray-300 p-2 text-right">Qtd.</th>
-                            <th className="border border-gray-300 p-2 text-right">Valor Unit.</th>
-                            <th className="border border-gray-300 p-2 text-right">Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pedidoDetalhes.itens.map((item) => (
-                            <tr key={item.id}>
-                              <td className="border border-gray-300 p-2">{item.produto.nome}</td>
-                              <td className="border border-gray-300 p-2 text-right">{item.quantidade}</td>
-                              <td className="border border-gray-300 p-2 text-right">
-                                {item.precoUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                              </td>
-                              <td className="border border-gray-300 p-2 text-right">
-                                {(item.quantidade * item.precoUnitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <div className="flex justify-between mb-2">
-                        <span>Subtotal:</span>
-                        <span>
-                          {(pedidoDetalhes.valorTotal - pedidoDetalhes.valorFrete).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between mb-2">
-                        <span>Frete:</span>
-                        <span>{pedidoDetalhes.valorFrete.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                      </div>
-                      <div className="flex justify-between text-xl font-bold">
-                        <span>Total:</span>
-                        <span>{pedidoDetalhes.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* Componente PDF para impressão */}
+              <div style={{ display: 'none' }}>
+                <PedidoPDF 
+                  ref={pdfRef}
+                  pedido={pedidoDetalhes}
+                  storeInfo={storeInfo}
+                />
               </div>
             </div>
           )}

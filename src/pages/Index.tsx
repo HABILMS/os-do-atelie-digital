@@ -1,212 +1,271 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Package, ShoppingBag, DollarSign, Instagram } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { StatsCard } from "@/components/ui/stats-card";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ShoppingBag,
+  Users,
+  Package,
+  DollarSign,
+  TrendingUp,
+  Instagram,
+  Plus
+} from "lucide-react";
 
-const Dashboard = () => {
+type StoreInfo = {
+  nome_loja: string;
+  logomarca: string | null;
+  instagram: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  cor_tema: string;
+};
+
+const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [storeInfo, setStoreInfo] = useState<{ instagram: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (session) {
-        setIsAuthenticated(true);
-        
-        // Carregar informações da loja
-        const { data, error } = await supabase
-          .from("configuracoes")
-          .select("instagram")
-          .eq("user_id", session.user.id)
-          .single();
-          
-        if (!error) {
-          setStoreInfo(data);
-        }
-      } else {
-        setIsAuthenticated(false);
-        navigate("/login");
-      }
-    };
-
-    checkAuth();
-    
-    // Configurar listerner para mudanças no estado de autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
       if (!session) {
-        navigate("/login");
+        navigate('/login');
+        return;
       }
-    });
-    
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigate]);
 
-  const handleInstagramButtonClick = () => {
-    if (!storeInfo?.instagram) {
-      navigate("/configuracoes");
-      toast({
-        title: "Instagram não configurado",
-        description: "Adicione seu Instagram nas configurações da loja.",
-      });
-      return;
+      setIsAuthenticated(true);
+      await fetchStoreInfo(session.user.id);
+    } catch (error) {
+      console.error("Erro na autenticação:", error);
+      navigate('/login');
+    } finally {
+      setLoading(false);
     }
-    
-    const instagramUser = storeInfo.instagram.replace('@', '');
-    window.open(`https://instagram.com/${instagramUser}`, '_blank');
   };
 
-  if (!isAuthenticated) {
+  const fetchStoreInfo = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Erro ao carregar informações da loja:", error);
+      }
+
+      setStoreInfo(data);
+    } catch (error) {
+      console.error("Erro ao carregar informações da loja:", error);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-lacos-light">
-        <Card className="w-[400px]">
-          <CardHeader>
-            <CardTitle className="text-center text-lacos-primary">
-              Meu Ateliê de Laços
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-center text-muted-foreground">
-              Para acessar o painel, por favor faça login.
-            </p>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/login")}
-            >
-              Fazer Login
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => navigate("/cadastro")}
-            >
-              Criar Conta
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lacos-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Carregando dashboard...</p>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <Layout title="Dashboard" showStoreInfo={false}>
-      <div className="grid gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard 
-            title="Total de Clientes" 
-            value="24" 
-            icon={<User size={24} />} 
+    <Layout title="Dashboard">
+      <div className="space-y-6">
+        {/* Cabeçalho com informações da loja */}
+        <div className="bg-white rounded-xl border border-lacos-rose p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-shrink-0">
+              {storeInfo?.logomarca ? (
+                <img 
+                  src={storeInfo.logomarca} 
+                  alt={storeInfo.nome_loja}
+                  className="w-16 h-16 object-contain rounded-lg border"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded-lg border">
+                  <Package size={24} className="text-gray-400" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-2xl font-bold" style={{ color: storeInfo?.cor_tema || '#F87171' }}>
+                {storeInfo?.nome_loja || 'Meu Ateliê de Laços'}
+              </h1>
+              
+              {storeInfo?.instagram && (
+                <a 
+                  href={`https://instagram.com/${storeInfo.instagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm hover:underline mt-1"
+                  style={{ color: storeInfo.cor_tema || '#F87171' }}
+                >
+                  <Instagram size={16} />
+                  {storeInfo.instagram}
+                </a>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/configuracoes')}
+              >
+                Configurar Loja
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Cards de estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="Pedidos do Mês"
+            value="0"
+            description="Nenhum pedido ainda"
+            icon={<ShoppingBag className="h-4 w-4" />}
           />
-          <StatsCard 
-            title="Total de Produtos" 
-            value="48" 
-            icon={<Package size={24} />}
+          <StatsCard
+            title="Clientes"
+            value="0"
+            description="Cadastre seu primeiro cliente"
+            icon={<Users className="h-4 w-4" />}
           />
-          <StatsCard 
-            title="Pedidos do Mês" 
-            value="18" 
-            icon={<ShoppingBag size={24} />} 
-            trend={{ value: 12, positive: true }}
+          <StatsCard
+            title="Produtos"
+            value="0"
+            description="Adicione seus produtos"
+            icon={<Package className="h-4 w-4" />}
           />
-          <StatsCard 
-            title="Total a Receber" 
-            value="R$ 1.250,00" 
-            icon={<DollarSign size={24} />} 
+          <StatsCard
+            title="Faturamento"
+            value="R$ 0,00"
+            description="Este mês"
+            icon={<DollarSign className="h-4 w-4" />}
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="col-span-1 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Vendas Recentes</CardTitle>
+        {/* Ações rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/pedidos')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Plus size={20} />
+                Novo Pedido
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Os dados serão exibidos aqui quando houver pedidos registrados.
+                Criar um novo pedido para seus clientes
               </p>
             </CardContent>
           </Card>
-          
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/produtos')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Package size={20} />
+                Gerenciar Produtos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Adicionar e editar seus produtos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/clientes')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users size={20} />
+                Cadastrar Cliente
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Adicionar novos clientes
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Integração com Instagram */}
+        {storeInfo?.instagram && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Instagram size={20} />
-                Instagram Feed
+                Instagram
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {storeInfo?.instagram ? (
-                <div className="space-y-4">
-                  <p className="text-sm">
-                    Conectado a <span className="font-medium">{storeInfo.instagram}</span>
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleInstagramButtonClick}
+              <div className="text-center py-8">
+                <Instagram size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  Conecte-se com seus clientes no Instagram
+                </p>
+                <Button variant="outline" asChild>
+                  <a 
+                    href={`https://instagram.com/${storeInfo.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    <Instagram size={18} className="mr-2" />
-                    Ver Instagram
-                  </Button>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    <p>Dica: Para uma integração mais completa com visualização do feed, considere adicionar o widget oficial do Instagram em uma atualização futura.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Configure seu Instagram nas configurações da loja para visualizar o seu feed aqui.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/configuracoes")}
-                  >
-                    Configurar Instagram
-                  </Button>
-                </div>
-              )}
+                    Visitar Perfil
+                  </a>
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clientes Recentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Os dados serão exibidos aqui quando houver clientes registrados.
+        {/* Pedidos recentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp size={20} />
+              Pedidos Recentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <ShoppingBag size={48} className="mx-auto text-gray-400 mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Nenhum pedido cadastrado ainda
               </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Status dos Pagamentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Os dados serão exibidos aqui quando houver pedidos registrados.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              <Button onClick={() => navigate('/pedidos')}>
+                Criar Primeiro Pedido
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
 };
 
-export default Dashboard;
+export default Index;
