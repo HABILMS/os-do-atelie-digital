@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ const Produtos = () => {
   const [colecao, setColecao] = useState("");
   const [foto, setFoto] = useState("");
   const [materiais, setMateriais] = useState<Material[]>([]);
-  const [novoMaterial, setNovoMaterial] = useState<Material>({
+  const [novoMaterial, setNovoMaterial] = useState({
     id: "",
     nome: "",
     quantidade: 1,
@@ -129,14 +130,14 @@ const Produtos = () => {
       return;
     }
 
-    setMateriais([
-      ...materiais,
-      { 
-        ...novoMaterial,
-        id: `material-${Date.now()}`,
-        custoUnitario: Number(novoMaterial.custoUnitario)
-      }
-    ]);
+    const materialToAdd: Material = {
+      id: `material-${Date.now()}`,
+      nome: novoMaterial.nome,
+      quantidade: novoMaterial.quantidade,
+      custoUnitario: Number(novoMaterial.custoUnitario)
+    };
+
+    setMateriais([...materiais, materialToAdd]);
     
     setNovoMaterial({
       id: "",
@@ -465,7 +466,7 @@ const Produtos = () => {
                         type="number"
                         min={0}
                         step={0.01}
-                        placeholder="Digite o valor"
+                        placeholder=""
                         value={novoMaterial.custoUnitario}
                         onChange={(e) => setNovoMaterial({ ...novoMaterial, custoUnitario: e.target.value })}
                       />
