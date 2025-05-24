@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useMobile } from "@/hooks/use-mobile"; 
+import { useIsMobile } from "@/hooks/use-mobile"; 
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 const Sidebar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const location = useLocation();
   const { toast } = useToast();
   
