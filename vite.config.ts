@@ -10,4 +10,5 @@ export default defineConfig({
     },
   },
   base: '/',
+  root: path.resolve(__dirname, 'src'), // 👈 Força o Vite a buscar index.html em src/
 })
