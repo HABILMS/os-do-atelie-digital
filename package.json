@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.cjs"
+    "start": "node server.mjs"
   },
   "dependencies": {
     "express": "^4.18.2"
