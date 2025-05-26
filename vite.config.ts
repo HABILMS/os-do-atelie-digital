@@ -13,5 +13,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      external: ['next-themes'],  // Adicionando next-themes como dependência externa
+    },
   },
 })
