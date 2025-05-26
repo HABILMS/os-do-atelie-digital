@@ -10,7 +10,6 @@ export default defineConfig({
     },
   },
   base: './',
-  // REMOVIDO: root: path.resolve(__dirname, 'src'), - Isso estava causando problemas
   build: {
     outDir: 'dist',
     sourcemap: false,
