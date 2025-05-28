@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Registro = () => {
   const [nome, setNome] = useState("");
@@ -19,6 +20,15 @@ const Registro = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!nome || !email || !password || !confirmPassword) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (password !== confirmPassword) {
       toast({
         title: "Senhas não conferem",
@@ -27,22 +37,48 @@ const Registro = () => {
       });
       return;
     }
+
+    if (password.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
 
     try {
-      // Simulação de registro - quando integrarmos com Supabase isto será substituído
-      setTimeout(() => {
-        toast({
-          title: "Cadastro realizado com sucesso!",
-          description: "Você já pode fazer login com suas credenciais.",
-        });
-        navigate("/login");
-      }, 1000);
-    } catch (error) {
+      console.log("Tentando criar usuário com:", { email, nome });
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: nome,
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("Usuário criado com sucesso:", data);
+
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Você já pode fazer login com suas credenciais.",
+      });
+      
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Erro no registro:", error);
       toast({
         title: "Erro ao registrar",
-        description: "Não foi possível criar sua conta. Tente novamente.",
+        description: error.message || "Não foi possível criar sua conta. Tente novamente.",
         variant: "destructive",
       });
     } finally {
