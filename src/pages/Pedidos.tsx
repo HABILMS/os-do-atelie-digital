@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from 'react-to-print';
 import Layout from "@/components/layout/Layout";
@@ -142,6 +141,7 @@ const Pedidos = () => {
   
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
 
@@ -266,23 +266,8 @@ const Pedidos = () => {
     });
   };
 
-  const handleGerarPDF = useReactToPrint({
-    content: () => pdfRef.current,
-    documentTitle: `Pedido-${pedidoDetalhes?.id.split('-')[1] || ''}`,
-    onAfterPrint: () => {
-      toast({
-        title: "PDF gerado com sucesso",
-        description: "O seu pedido foi exportado para PDF."
-      });
-    },
-    onPrintError: (errorLocation, error) => {
-      console.error("Erro ao gerar PDF:", error);
-      toast({
-        title: "Erro ao gerar PDF",
-        description: "Não foi possível gerar o PDF do pedido.",
-        variant: "destructive"
-      });
-    }
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
   });
 
   useEffect(() => {
@@ -607,7 +592,7 @@ const Pedidos = () => {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => handleGerarPDF()}
+                    onClick={() => handlePrint()}
                   >
                     <FileText size={18} className="mr-2" />
                     Gerar PDF

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, signInWithDefaultAdmin } from "@/utils/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -68,6 +69,34 @@ const Login = () => {
     }
   };
 
+  const handleAdminLogin = async () => {
+    setLoading(true);
+    try {
+      await signInWithDefaultAdmin();
+      
+      toast({
+        title: "Login de administrador efetuado!",
+        description: "Bem-vindo, Admin.",
+      });
+      
+      navigate("/");
+    } catch (error: any) {
+      console.error("Erro no login de admin:", error);
+      toast({
+        title: "Erro ao fazer login de administrador",
+        description: error.message || "Erro ao criar/acessar conta de administrador.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fillAdminCredentials = () => {
+    setEmail(DEFAULT_ADMIN_EMAIL);
+    setPassword(DEFAULT_ADMIN_PASSWORD);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-lacos-light p-4">
       <div className="max-w-md w-full">
@@ -114,6 +143,35 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg border">
+                <p className="text-sm text-blue-700 mb-2">
+                  <strong>Acesso rápido de demonstração:</strong>
+                </p>
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={fillAdminCredentials}
+                    className="w-full"
+                  >
+                    Preencher credenciais de admin
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleAdminLogin}
+                    disabled={loading}
+                    size="sm"
+                    className="w-full"
+                  >
+                    Login direto como Admin
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  Email: admin@admin.com | Senha: 123
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
