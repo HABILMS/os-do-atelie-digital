@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useReactToPrint } from 'react-to-print';
 import Layout from "@/components/layout/Layout";
@@ -266,7 +267,7 @@ const Pedidos = () => {
   };
 
   const handleGerarPDF = useReactToPrint({
-    contentRef: pdfRef,
+    content: () => pdfRef.current,
     documentTitle: `Pedido-${pedidoDetalhes?.id.split('-')[1] || ''}`,
     onAfterPrint: () => {
       toast({
